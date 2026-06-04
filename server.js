@@ -144,7 +144,12 @@ function route(method, p, handler) { routes[method + ':' + p] = handler; }
 route('POST', '/api/login', async (req, res) => {
   const { passcode, username, device } = await readBody(req);
   if (!passcode || passcode !== state.passcode) return jsonRes(res, { error: 'Wrong passcode' }, 401);
-  if (!username || username.trim().length < 2) return jsonRes(res, { error: 'Username must be 2+ chars' }, 400);
+  let clean = (username || '').trim();
+
+if (!clean)
+  clean = 'Guest' + Math.floor(Math.random() * 100000);
+
+clean = clean.slice(0, 24);
   const clean = username.trim().slice(0, 24);
   const ip    = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const token = createSession(clean, ip, device || {});
@@ -157,7 +162,12 @@ route('POST', '/api/rename', async (req, res) => {
   const { token, username } = await readBody(req);
   const s = getSession(token);
   if (!s) return jsonRes(res, { error: 'Invalid session' }, 401);
-  if (!username || username.trim().length < 2) return jsonRes(res, { error: 'Username must be 2+ chars' }, 400);
+  let clean = (username || '').trim();
+
+if (!clean)
+  clean = 'Guest' + Math.floor(Math.random() * 100000);
+
+clean = clean.slice(0, 24);
   const old = s.username;
   s.username = username.trim().slice(0, 24);
   logAudit('RENAME', s.username, token, s.ip, s.device);
