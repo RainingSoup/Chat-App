@@ -143,20 +143,33 @@ function route(method, p, handler) { routes[method + ':' + p] = handler; }
 // ── Login (now accepts device fingerprint) ────────────────────────────────────
 route('POST', '/api/login', async (req, res) => {
   const { passcode, username, device } = await readBody(req);
-  if (!passcode || passcode !== state.passcode) return jsonRes(res, { error: 'Wrong passcode' }, 401);
+
+  if (!passcode || passcode !== state.passcode)
+    return jsonRes(res, { error: 'Wrong passcode' }, 401);
+
   let clean = (username || '').trim();
 
-if (!clean)
-  clean = 'Guest' + Math.floor(Math.random() * 100000);
+  if (!clean)
+    clean = 'Guest' + Math.floor(Math.random() * 100000);
 
-clean = clean.slice(0, 24);
-  const clean = username.trim().slice(0, 24);
-  const ip    = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  clean = clean.slice(0, 24);
+
+  const ip =
+    req.headers['x-forwarded-for'] ||
+    req.socket.remoteAddress ||
+    'unknown';
+
   const token = createSession(clean, ip, device || {});
-  state.messages.push({ id: uid(), type: 'system', text: `${clean} joined the chat`, ts: tsStr() });
+
+  state.messages.push({
+    id: uid(),
+    type: 'system',
+    text: `${clean} joined the chat`,
+    ts: tsStr()
+  });
+
   jsonRes(res, { token, username: clean });
 });
-
 // ── Rename ────────────────────────────────────────────────────────────────────
 route('POST', '/api/rename', async (req, res) => {
   const { token, username } = await readBody(req);
