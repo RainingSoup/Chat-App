@@ -23,7 +23,7 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // ── In-memory state ───────────────────────────────────────────────────────────
 let state = {
   passcode: 'secret123',          // Change this!
-  adminPassword: 'admin999',      // Admin dashboard password
+  adminPassword: 'TapuTapu01',      // Admin dashboard password
   messages: [],
   sessions: {},                   // token → { username, joinedAt, lastSeen, ip }
   bannedTokens: new Set(),
@@ -328,7 +328,7 @@ server.listen(PORT, () => {
   console.log(`   Local:   http://localhost:${PORT}`);
   console.log(`   Admin:   http://localhost:${PORT}/admin`);
   console.log(`\n   Default passcode:       secret123`);
-  console.log(`   Default admin password: admin999`);
+  console.log(`   Default admin password: TapuTapu01`);
   console.log(`\n   Change these after first login!\n`);
 });
 
