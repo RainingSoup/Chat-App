@@ -221,10 +221,18 @@ function route(method, path_, handler) { routes[method + ':' + path_] = handler;
 
 // ── Auth ────────────────────────────────────────────────────────────────────────
 route('POST', '/api/login', async (req, res) => {
-  const { passcode, username } = await readBody(req);
-  if (!passcode || passcode !== state.passcode) return jsonRes(res, { error: 'Wrong passcode' }, 401);
-  if (!username || username.trim().length < 2) return jsonRes(res, { error: 'Username must be 2+ chars' }, 400);
-  const clean = username.trim().slice(0, 24);
+const { passcode, username } = await readBody(req);
+
+if (!passcode || passcode !== state.passcode)
+  return jsonRes(res, { error: 'Wrong passcode' }, 401);
+
+// Allow anonymous users
+const clean =
+  (username && username.trim())
+    ? username.trim().slice(0, 24)
+    : 'Anonymous';
+
+const token = createSession(clean, req);
   const token = createSession(clean, req);
   const msg = { id: uid(), type: 'system', text: `${clean} joined the chat`, ts: tsStr() };
   messages.push(msg);
