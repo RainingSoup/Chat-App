@@ -746,33 +746,46 @@ async function login(){
 }
 
 function showChat(){
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('chat-screen').style.display='flex';
-  document.getElementById('current-user').textContent=myUsername;
-  lastSeen=0;currentGroupId=null;
-  renderGroups();poll();
+   document.getElementById('login-screen').style.display='none';
+   document.getElementById('chat-screen').style.display='flex';
+   document.getElementById('current-user').textContent=myUsername;
+   lastSeen=0;currentGroupId=null;
+   renderGroups();
+   // Delay poll to ensure page is rendered before first API call
+   setTimeout(poll, 100);
 }
 
-function logout(){localStorage.removeItem('sc_token');localStorage.removeItem('sc_username');clearTimeout(pollTimer);location.reload();}
-
 async function poll(){
-  try{
-    if(currentGroupId){
-      const r=await fetch('/api/groups/messages?token='+token+'&groupId='+currentGroupId+'&since='+(lastGroupSeen[currentGroupId]||0));
-      if(r.status===401){logout();return;}
-      const d=await r.json();
-      if(d.messages&&d.messages.length){d.messages.forEach(appendMsg);lastGroupSeen[currentGroupId]=d.serverTime;}
-      // Also poll main for users/groups
-      const r2=await fetch('/api/messages?token='+token+'&since='+lastSeen);
-      if(r2.ok){const d2=await r2.json();if(d2.users)updateUsers(d2.users);if(d2.groups){allGroups=d2.groups;renderGroups();}}
-    } else {
-      const r=await fetch('/api/messages?token='+token+'&since='+lastSeen);
-      if(r.status===401){logout();return;}
-      const d=await r.json();
-      if(d.messages&&d.messages.length){d.messages.forEach(appendMsg);lastSeen=d.serverTime;}
-      if(d.users)updateUsers(d.users);
-      if(d.groups){allGroups=d.groups;renderGroups();}
-    }
+   try{
+     if(currentGroupId){
+       const r=await fetch('/api/groups/messages?token='+token+'&groupId='+currentGroupId+'&since='+(lastGroupSeen[currentGroupId]||0));
+       if(!r.ok){
+         if(r.status===401){logout();return;}
+         // For other errors, just skip this poll cycle and retry
+         pollTimer=setTimeout(poll,1500);
+         return;
+       }
+       const d=await r.json();
+       if(d.messages&&d.messages.length){d.messages.forEach(appendMsg);lastGroupSeen[currentGroupId]=d.serverTime;}
+       // Also poll main for users/groups
+       const r2=await fetch('/api/messages?token='+token+'&since='+lastSeen);
+       if(r2.ok){const d2=await r2.json();if(d2.users)updateUsers(d2.users);if(d2.groups){allGroups=d2.groups;renderGroups();}}
+     } else {
+       const r=await fetch('/api/messages?token='+token+'&since='+lastSeen);
+       if(!r.ok){
+         if(r.status===401){logout();return;}
+         // For other errors, just skip this poll cycle and retry
+         pollTimer=setTimeout(poll,1500);
+         return;
+       }
+       const d=await r.json();
+       if(d.messages&&d.messages.length){d.messages.forEach(appendMsg);lastSeen=d.serverTime;}
+       if(d.users)updateUsers(d.users);
+       if(d.groups){allGroups=d.groups;renderGroups();}
+     }
+   }catch(e){}
+   pollTimer=setTimeout(poll,1500);
+}
   }catch(e){}
   pollTimer=setTimeout(poll,1500);
 }
